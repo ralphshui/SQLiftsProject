@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, PrimaryKeyConstraint, String
 from sqlalchemy.orm import declarative_base
 
+import click
+
 Base = declarative_base()
 
 class Workout(Base):
@@ -16,8 +18,8 @@ class Workout(Base):
 
     def __repr__(self):
         return f"Id: {self.id}, "\
-        + f"WorkoutDay: {self.workout_day}, "\
-        + f"WorkoutName: {self.workout_name}, "\
-        + f"Reps: {self.reps}, "\
-        + f"Sets: {self.sets}, "\
-        + f"Weight: {self.weight}"
+        + f"{click.style('Day:', fg='green', bold=True)} {self.workout_day}, "\
+        + f"{click.style('Name:', fg='green', bold=True)} {self.workout_name}, "\
+        + f"{click.style('Reps:', fg='green', bold=True)} {self.reps}, "\
+        + f"{click.style('Sets:', fg='green', bold=True)} {self.sets}, "\
+        + f"{click.style('Weight:', fg='green', bold=True)} {self.weight}"
