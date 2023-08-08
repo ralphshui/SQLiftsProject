@@ -1,0 +1,30 @@
+import click
+
+class Greeting:
+    # def rainbow_text(text):
+    #     rainbow_colors = ["red", "yellow", "green", "blue", "magenta", "cyan"]
+    #     rainbow_text = ""
+    #     for i, char in enumerate(text):
+    #         color = rainbow_colors[i % len(rainbow_colors)]
+    #         rainbow_text += click.style(char, fg=color)
+    #     return rainbow_text
+    
+    @click.command()
+    @click.option("--name", prompt="Enter your name ", help="The name of the user")
+    def __init__(self, name):
+        self.name = name
+        """Greeting user to CLI"""
+        click.echo(f"Hello {self.name}, Welcome to SQLIFTS!")
+        click.echo("Your one place to update all your gym workouts. Let's begin planning your excerises!")
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @name.setter
+    def name(self, name):
+        if name and isinstance(name, str):
+            self._name = name
+        else:
+            raise Exception
+        
