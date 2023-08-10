@@ -8,8 +8,8 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    # session.query(Preference).delete()
-    # session.query(Name).delete()
+    session.query(Preference).delete()
+    session.query(Name).delete()
 
     # all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
     #        'Saturday', 'Sunday']
@@ -43,31 +43,31 @@ if __name__ == '__main__':
 
     #         preferences.append(preference)
 
-    exercises = ['barbell bicep curl',
-'bench press',
-'rope tricep extension',
-'hamstring extension',
-'cable flys',
-'calf raises',
-'overhead press',
-'squats',
-'bent-over row',
-'deadlift',
-'leg extension',
-'leg press',
-'incline bench press',
-'lat pull down',
-'lateral raises',
-'upright row',
-'shrugs',
-'preacher curl',
-'close grip bench press',
-'pull ups',
-'push ups',
-'hip thrust']
+    # exercises = ['barbell bicep curl',
+    # 'bench press',
+    # 'rope tricep extension',
+    # 'hamstring extension',
+    # 'cable flys',
+    # 'calf raises',
+    # 'overhead press',
+    # 'squats',
+    # 'bent-over row',
+    # 'deadlift',
+    # 'leg extension',
+    # 'leg press',
+    # 'incline bench press',
+    # 'lat pull down',
+    # 'lateral raises',
+    # 'upright row',
+    # 'shrugs',
+    # 'preacher curl',
+    # 'close grip bench press',
+    # 'pull ups',
+    # 'push ups',
+    # 'hip thrust']
     
-    for exercise_name in exercises:
-        exercise = Exercise(exercise = exercise_name)
+    # for exercise_name in exercises:
+    #     exercise = Exercise(exercise = exercise_name)
         
-        session.add(exercise)
-        session.commit()
+    #     session.add(exercise)
+    #     session.commit()

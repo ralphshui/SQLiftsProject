@@ -24,7 +24,7 @@ class Exercise(Base):
     exercise = Column(String())
     
     def __repr__(self):
-        return f"Id: {self.id}--"\
+        return f"Id-{self.id}: "\
         + f"{self.exercise}"
 
 

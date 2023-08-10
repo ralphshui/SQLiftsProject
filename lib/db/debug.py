@@ -12,9 +12,9 @@ if __name__ == '__main__':
     Session = sessionmaker(engine)
     session = Session()
 
-    name = session.query(Name).first()
+    # name = session.query(Name).first()
 
     # print(name.name)
 
-    preference = session.query(Preference).first()
-    print(preference)
+    # preference = session.query(Preference).first()
+    # print(preference)
