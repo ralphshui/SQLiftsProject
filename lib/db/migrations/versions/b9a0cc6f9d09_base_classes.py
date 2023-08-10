@@ -30,6 +30,7 @@ def upgrade():
     )
     op.create_table('preferences',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('exercise', sa.String(), nullable=True),
     sa.Column('day', sa.String(), nullable=True),
     sa.Column('reps', sa.Integer(), nullable=True),
     sa.Column('sets', sa.Integer(), nullable=True),

@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 from models import Name, Exercise, Preference, Base
 
 import click
@@ -14,12 +14,11 @@ def rainbow_text(text):
         rainbow_text += click.style(char, fg=color)
     return rainbow_text
 
+
 @click.group()
 def cli():
     pass
 
-def test():
-    click.echo("TESTING")
 
 @click.command()
 @click.option("--confirm", prompt="Are you a new user? [y/n] ", help="Confirms new or current user")
@@ -27,29 +26,32 @@ def greeting(confirm):
     """Greeting user to CLI"""
     engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
+    global current_user
+    current_user = None
     
     if confirm == 'y':
         add_name = input("Enter your name: ")
         new_name = Name(name = add_name)
         session.add(new_name)
         session.commit()
+        current_user = new_name
+
         click.echo()
         click.echo(f"Hello {click.style(add_name, fg='yellow', bold=True)}, Welcome to {click.style('SQLIFTS', fg='cyan', bold=True)}!")
         click.echo("Your one place to update all your gym workouts. Let's begin planning your exerises!")
         click.echo()
         menu()
     elif confirm == 'n':
-        global current_user
         old_name = input("Enter your name: ")
-        current_user = session.query(Name).filter(Name.name == old_name).all()
+        current_user = session.query(Name).filter(Name.name == old_name).first()
         click.echo()
         if current_user:
             click.echo(f"Welcome back {click.style(old_name, fg='yellow', bold=True)}! Let's continue updating your exerises.")
             click.echo()
             menu()
+            
         else:
             click.echo(f"{click.style('Name not found!', fg='red')}")
             click.echo()
@@ -59,17 +61,21 @@ def add():
     """asks user to input exercise details(day, reps, sets, weight) after adding by name"""
     engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
-    add_exercise = input(f"{click.style('Choose an exercise to add by name: ', fg='green', bold=True)}")
     all_exercises = [exercise[0] for exercise in session.query(Exercise.exercise).all()]
+    add_exercise = input(f"{click.style('Choose an exercise to add by name: ', fg='green', bold=True)}")
 
     if add_exercise in all_exercises:
         new_day = input(f"{click.style('Enter the day of workout (Monday-Sunday): ', fg='green', bold=True)}")
         new_reps = input(f"{click.style('Enter the number of reps: ', fg='green', bold=True)}")
         new_sets = input(f"{click.style('Enter the number of sets: ', fg='green', bold=True)}")
         new_weight = input(f"{click.style('Enter the lifting weight (in lbs): ', fg='green', bold=True)}")
+        
+        workout = Preference(exercise=add_exercise,day=new_day,reps=new_reps,sets=new_sets,weight=new_weight, name_id=current_user.id)
+        session.add(workout)
+        session.commit()
+
         click.echo()
         click.echo(f"{rainbow_text('YOUR EXERCISE HAS BEEN SUCCESSFULLY ADDED!!!')}")
         click.echo(f"{click.style('Exercise:', fg='green', bold=True)} {add_exercise}")
@@ -80,19 +86,13 @@ def add():
         click.echo()
     else:
         click.echo(f"{click.style('Exercise not Found! Please refer to list of all exercises (Option #1 in menu)', fg='red')}")
-
-
-    # if name in 
-    # workout = Preference(day=day, name=name, reps=reps, sets=sets, weight=weight)
-    # session.add(workout)
-    # session.commit()
+        click.echo()
 
 
 def all():
     """Show all available workouts from exercise_app.db"""
     engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
     session.query(Exercise).delete()
@@ -105,7 +105,7 @@ def all():
     'calf raises',
     'overhead press',
     'squats',
-    'bent-over row',
+    'bentover row',
     'deadlift',
     'leg extension',
     'leg press',
@@ -129,86 +129,79 @@ def all():
     click.echo()
     click.echo(f"{click.style('**********All Workouts**********', fg='cyan', bold=True)}")
     for exercise in all_exercises:
-        click.echo(f"{click.style(exercise, fg='green', bold=True)}")
+        click.echo(exercise)
     click.echo()
+
 
 def current():
     """Shows all current workouts added by user"""
-
     engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    # session.query(Preference).filter(Preference.id == current_user.id).first()
-    click.echo(current_user)
+    current_workouts=session.query(Preference).filter(Preference.name_id == current_user.id).all()
+    click.echo(current_workouts)
 
 
-@click.option("--update", prompt="Enter the name of workout you would like to update", 
-help="Name of workout to update")
-def update(update):
+def update():
     """filters a specific workout by name and then allows update"""
-    engine = create_engine('sqlite:///workouts.db')
+    engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
-    
-    update_workout = session.query(Workout).filter(Workout.workout_name.ilike(update)).first()
+
+    update_workout_id = input(f"Enter the {click.style('Id', fg='yellow')} of your workout to update: ")
+    update_workout = session.query(Preference).filter(Preference.id == update_workout_id).first()
     
     if update_workout:
         click.echo(update_workout)
-        update_input = input("What would you like to update? ")
-        if update_input.lower() == 'name':
-            input_new_name = input("Enter new name for workout: ")
-            update_workout.workout_name = input_new_name
-            session.commit()
-            click.echo(f"{rainbow_text('WORKOUT NAME HAS BEEN SUCCESSFULLY UPDATED!!!')}")
-            click.echo(update_workout)
+        update_input = input(f"What would you like to update ({click.style('day, reps, sets, weight', fg='green')})?: ")
 
-        elif update_input.lower() == 'day':
-            input_new_day = input("Enter new day for workout: ")
-            update_workout.workout_day = input_new_day
+        if update_input.lower() == 'day':
+            input_new_day = input(f"Enter new {click.style('day', fg='green')} for {update_workout.exercise}: ")
+            update_workout.day = input_new_day
             session.commit()
             click.echo(f"{rainbow_text('WORKOUT DAY HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+            click.echo()
             click.echo(update_workout)
 
         elif update_input.lower() in ('reps', 'rep'):
-            input_new_reps = input("Enter new reps for workout: ")
+            input_new_reps = input(f"Enter new {click.style('reps', fg='green')} for {update_workout.exercise}: ")
             update_workout.reps = input_new_reps
             session.commit()
             click.echo(f"{rainbow_text('WORKOUT REPS HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+            click.echo()
             click.echo(update_workout)
 
         elif update_input.lower() in ('sets', 'set'):
-            input_new_sets = input("Enter new set for workout: ")
+            input_new_sets = input(f"Enter new {click.style('sets', fg='green')} for {update_workout.exercise}: ")
             update_workout.sets = input_new_sets
             session.commit()
             click.echo(f"{rainbow_text('WORKOUT SETS HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+            click.echo()
             click.echo(update_workout)
 
         elif update_input.lower() == 'weight':
-            input_new_weight = input("Enter new weight for workout: ")
+            input_new_weight = input(f"Enter new {click.style('weight', fg='green')} for {update_workout.exercise}: ")
             update_workout.weight = input_new_weight
             session.commit()
             click.echo(f"{rainbow_text('WORKOUT WEIGHT HAS BEEN SUCCESSFULLY UPDATED!!!')}")
             click.echo(update_workout)
         else:
-            click.echo(f"{click.style('Not Found!', fg='magenta')}")
+            click.echo(f"{click.style('Atrribute Not Found! Please type: day, reps, sets, weight', fg='red')}")
     else:
-        click.echo(f"{click.style('Workout Not Found!', fg='magenta')}")
+        click.echo(f"{click.style('Workout Not Found!', fg='red')}")
 
 
-
-@click.option("--search", prompt="Search by name or day", help="searching workouts by day or name")
-def search(search):
+def search():
     """search workouts by name or day from workouts.db"""
-    engine = create_engine('sqlite:///workouts.db')
+    engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
+
+    search_term = input(f"Search by {click.style('name', fg='green')} or {click.style('day', fg='green')}: ")
 
     if search.lower() == 'day':
         search_day = input("What day? ").lower()
@@ -229,7 +222,6 @@ def search(search):
             click.echo(f"{click.style('No workouts found. Try Again!', fg='magenta')}")
     else:
         click.echo(f"{click.style('Invalid search. Try Again!', fg='magenta')}")
-
 
 
 @click.option("--delete", prompt="Enter the name of the workout you would like to delete ",
@@ -264,7 +256,7 @@ def menu():
         click.echo(f"1# {click.style('View all available workouts', fg='blue')}")
         click.echo(f"2# {click.style('View all current workouts', fg='blue')}")
         click.echo(f"3# {click.style('Add workout', fg='blue')}")
-        click.echo(f"4# {click.style('Modify current workouts', fg='blue')}")
+        click.echo(f"4# {click.style('Update current workouts', fg='blue')}")
         click.echo(f"5# {click.style('Delete a workout', fg='blue')}")
         click.echo(f"6# {click.style('Search current workouts by name or day', fg='blue')}")
         click.echo(f"7# {click.style('Quit', fg='red')}")
