@@ -67,7 +67,7 @@ def add():
     add_exercise = input(f"{click.style('Choose an exercise to add by name: ', fg='green', bold=True)}")
 
     if add_exercise in all_exercises:
-        new_day = input(f"{click.style('Enter the day of workout (Monday-Sunday): ', fg='green', bold=True)}")
+        new_day = input(f"{click.style('Enter the day of workout (monday-sunday): ', fg='green', bold=True)}").lower()
         new_reps = input(f"{click.style('Enter the number of reps: ', fg='green', bold=True)}")
         new_sets = input(f"{click.style('Enter the number of sets: ', fg='green', bold=True)}")
         new_weight = input(f"{click.style('Enter the lifting weight (in lbs): ', fg='green', bold=True)}")
@@ -145,83 +145,95 @@ def current():
 
 
 def update():
-    """filters a specific workout by name and then allows update"""
+    """filters a specific current workout by name and then allows update"""
     engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
-
-    update_workout_id = input(f"Enter the {click.style('Id', fg='yellow')} of your workout to update: ")
+    current_user_workouts=session.query(Preference).filter(Preference.name_id == current_user.id).all()
+    update_workout_id = int(input(f"Enter the {click.style('Id', fg='yellow')} of your workout to update: "))
     update_workout = session.query(Preference).filter(Preference.id == update_workout_id).first()
-    
-    if update_workout:
-        click.echo(update_workout)
-        update_input = input(f"What would you like to update ({click.style('day, reps, sets, weight', fg='green')})?: ")
+    workout_found = False
 
-        if update_input.lower() == 'day':
-            input_new_day = input(f"Enter new {click.style('day', fg='green')} for {update_workout.exercise}: ")
-            update_workout.day = input_new_day
-            session.commit()
-            click.echo(f"{rainbow_text('WORKOUT DAY HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+    for workout in current_user_workouts:
+        if update_workout_id == workout.id:
+            workout_found = True
             click.echo()
             click.echo(update_workout)
+            update_input = input(f"What would you like to update ({click.style('day, reps, sets, weight', fg='green')})?: ")
 
-        elif update_input.lower() in ('reps', 'rep'):
-            input_new_reps = input(f"Enter new {click.style('reps', fg='green')} for {update_workout.exercise}: ")
-            update_workout.reps = input_new_reps
-            session.commit()
-            click.echo(f"{rainbow_text('WORKOUT REPS HAS BEEN SUCCESSFULLY UPDATED!!!')}")
-            click.echo()
-            click.echo(update_workout)
+            if update_input.lower() == 'day':
+                input_new_day = input(f"Enter new {click.style('day', fg='green')} for {update_workout.exercise}: ")
+                update_workout.day = input_new_day
+                session.commit()
+                click.echo(f"{rainbow_text('WORKOUT DAY HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+                click.echo()
+                click.echo(update_workout)
 
-        elif update_input.lower() in ('sets', 'set'):
-            input_new_sets = input(f"Enter new {click.style('sets', fg='green')} for {update_workout.exercise}: ")
-            update_workout.sets = input_new_sets
-            session.commit()
-            click.echo(f"{rainbow_text('WORKOUT SETS HAS BEEN SUCCESSFULLY UPDATED!!!')}")
-            click.echo()
-            click.echo(update_workout)
+            elif update_input.lower() in ('reps', 'rep'):
+                input_new_reps = input(f"Enter new {click.style('reps', fg='green')} for {update_workout.exercise}: ")
+                update_workout.reps = input_new_reps
+                session.commit()
+                click.echo(f"{rainbow_text('WORKOUT REPS HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+                click.echo()
+                click.echo(update_workout)
 
-        elif update_input.lower() == 'weight':
-            input_new_weight = input(f"Enter new {click.style('weight', fg='green')} for {update_workout.exercise}: ")
-            update_workout.weight = input_new_weight
-            session.commit()
-            click.echo(f"{rainbow_text('WORKOUT WEIGHT HAS BEEN SUCCESSFULLY UPDATED!!!')}")
-            click.echo(update_workout)
-        else:
-            click.echo(f"{click.style('Atrribute Not Found! Please type: day, reps, sets, weight', fg='red')}")
-    else:
+            elif update_input.lower() in ('sets', 'set'):
+                input_new_sets = input(f"Enter new {click.style('sets', fg='green')} for {update_workout.exercise}: ")
+                update_workout.sets = input_new_sets
+                session.commit()
+                click.echo(f"{rainbow_text('WORKOUT SETS HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+                click.echo()
+                click.echo(update_workout)
+
+            elif update_input.lower() == 'weight':
+                input_new_weight = input(f"Enter new {click.style('weight', fg='green')} for {update_workout.exercise}: ")
+                update_workout.weight = input_new_weight
+                session.commit()
+                click.echo(f"{rainbow_text('WORKOUT WEIGHT HAS BEEN SUCCESSFULLY UPDATED!!!')}")
+                click.echo(update_workout)
+            else:
+                click.echo(f"{click.style('Atrribute Not Found! Please type: day, reps, sets, weight', fg='red')}")
+    if not workout_found:
         click.echo(f"{click.style('Workout Not Found!', fg='red')}")
+        click.echo()
 
 
 def search():
-    """search workouts by name or day from workouts.db"""
+    """search current workouts by name or day"""
     engine = create_engine('sqlite:///exercise_app.db')
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
-
-    search_term = input(f"Search by {click.style('name', fg='green')} or {click.style('day', fg='green')}: ")
-
+    current_user_workouts=session.query(Preference).filter(Preference.name_id == current_user.id).all()
+    
+    search = input(f"Search by {click.style('name', fg='green')} or {click.style('day', fg='green')}: ")
+    
     if search.lower() == 'day':
-        search_day = input("What day? ").lower()
-        search_day_results = session.query(Workout).filter(Workout.workout_day.ilike(search_day)).all()
-        if search_day_results:
-            for result in search_day_results:
-                click.echo(result)
-        else:
-            click.echo(f"{click.style(f'No workouts found on {search_day}. Try Again!', fg='magenta')}")
+        workout_found = False
+        search_day = input(f"Which {click.style('day', fg='green')} (monday-sunday)? ").lower()
+
+        for workout in current_user_workouts:
+            if search_day in workout.day:
+                click.echo(workout)
+                workout_found = True
+        if not workout_found:
+            click.echo(f"{click.style(f'No workouts found on {search_day}. Try Again!', fg='red')}")
 
     elif search.lower() == 'name':
-        search_name = input("What is the name of the workout? ").lower()
-        search_name_results = session.query(Workout).filter(Workout.workout_name.ilike(search_name)).all()
-        if search_name_results:
-            for result in search_name_results:
-                click.echo(result)
-        else:
-            click.echo(f"{click.style('No workouts found. Try Again!', fg='magenta')}")
+        workout_found = False
+        search_name = input("What is the name of the exercise? ").lower()
+
+        for workout in current_user_workouts:
+            if search_name in workout.exercise:
+                click.echo()
+                click.echo(workout)
+                workout_found = True
+        if not workout_found:
+            click.echo(f"{click.style('No workouts found. Try Again!', fg='red')}")
+
     else:
-        click.echo(f"{click.style('Invalid search. Try Again!', fg='magenta')}")
+        click.echo(f"{click.style('Invalid search. Please type day or name', fg='red')}")
 
 
 @click.option("--delete", prompt="Enter the name of the workout you would like to delete ",
