@@ -236,29 +236,35 @@ def search():
         click.echo(f"{click.style('Invalid search. Please type day or name', fg='red')}")
 
 
-@click.option("--delete", prompt="Enter the name of the workout you would like to delete ",
-help="deleting workout by name")
-def delete(delete):
-    """Delete a workout from workouts.db"""
-    engine = create_engine('sqlite:///workouts.db')
-    Base.metadata.create_all(bind=engine)
+# 
 
+def delete():
+    """Delete a workout from users current workouts"""
+    engine = create_engine('sqlite:///exercise_app.db')
+    Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    delete_workout = session.query(Workout).filter(Workout.workout_name.ilike(delete)).first()
-    confirm = click.confirm("Are you sure?")
+    current_user_workouts=session.query(Preference).filter(Preference.name_id == current_user.id).all()
+    # delete_workout = session.query(Workout).filter(Workout.workout_name.ilike(delete)).first()
+    delete_id = int(input(f"{click.style('Enter the ID of the workout to delete in your current workouts', fg='blue')}: "))
 
-    if delete_workout:
-        if confirm:
-            session.delete(delete_workout)
-            session.commit()
-            click.echo(f"{click.style('Successfully Deleted!', fg='red')}")
-        else:
-            click.echo(f"{click.style('please return to Commands', fg='magenta')}") 
-    else:
-        click.echo(f"{click.style('Workout not Found!', fg='magenta')}")
+    if delete_id:
+        workout_found = False
 
+        for workout in current_user_workouts:
+            if delete_id == workout.id:
+                delete_workout = session.query(Preference).filter(Preference.id == workout.id).first()
+                click.echo(delete_workout)
+                workout_found = True
+                session.delete(delete_workout)
+                session.commit()
+                click.echo(f"{click.style('Successfully Deleted!', fg='red')}")
+                click.echo()
+        if not workout_found:
+            click.echo(f"{click.style(f'No workouts with ID: {delete_id}. Try Again!', fg='red')}")
+            click.echo()
+            
 
 def menu():
     """SQLIFTS interface menu"""
